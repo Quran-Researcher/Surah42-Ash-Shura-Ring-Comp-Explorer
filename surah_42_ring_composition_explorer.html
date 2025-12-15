@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surah 42 Ring Composition Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cormorant+Garamond:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-a: #4a90d9;
+            --color-b: #d94a4a;
+            --color-c: #2ecc71;
+            --color-b-prime: #9b59b6;
+            --color-a-prime: #f5a623;
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-hover: #1a1a25;
+            --text-primary: #f0f0f5;
+            --text-secondary: #8888a0;
+            --text-muted: #55556a;
+            --gold: #d4af37;
+            --border: #2a2a3a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .arabic {
+            font-family: 'Amiri', serif;
+            direction: rtl;
+            line-height: 2;
+        }
+
+        .translation {
+            font-style: italic;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            margin-top: 8px;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(180deg, #15151f 0%, var(--bg-dark) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.8rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--gold) 0%, #f0e6c8 50%, var(--gold) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header .arabic-title { font-size: 2rem; color: var(--gold); margin-bottom: 12px; }
+        .header p { color: var(--text-secondary); font-size: 1.1rem; font-weight: 300; }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 20px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .nav-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .nav-tab.active {
+            background: linear-gradient(135deg, var(--gold) 0%, #c49b2c 100%);
+            color: var(--bg-dark);
+            border-color: var(--gold);
+        }
+
+        .main-container { max-width: 1600px; margin: 0 auto; padding: 30px 20px; }
+        .view-container { display: none; }
+        .view-container.active { display: block; animation: fadeIn 0.4s ease; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ring-view { display: flex; flex-direction: column; align-items: center; gap: 40px; }
+        .ring-svg-container { position: relative; width: 100%; max-width: 800px; }
+
+        .ring-legend {
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 20px;
+            padding: 20px; background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border);
+        }
+
+        .legend-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;
+        }
+        .legend-item:hover { background: var(--bg-hover); }
+        .legend-color { width: 16px; height: 16px; border-radius: 4px; }
+        .legend-label { font-size: 0.9rem; font-weight: 500; }
+        .legend-verses { font-size: 0.8rem; color: var(--text-muted); }
+
+        .ring-arc { cursor: pointer; transition: all 0.3s ease; }
+        .ring-arc:hover { filter: brightness(1.2); }
+        .ring-arc.selected { filter: brightness(1.3) drop-shadow(0 0 15px currentColor); }
+        .ring-label { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 600; fill: var(--text-primary); pointer-events: none; }
+        .ring-center-text { font-family: 'Amiri', serif; fill: var(--text-primary); }
+
+        .section-detail {
+            background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border);
+            padding: 30px; margin-top: 30px; max-width: 900px; margin-left: auto; margin-right: auto;
+        }
+
+        .section-header {
+            display: flex; align-items: center; gap: 15px; margin-bottom: 20px;
+            padding-bottom: 15px; border-bottom: 1px solid var(--border);
+        }
+
+        .section-badge {
+            width: 50px; height: 50px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 700; color: white;
+        }
+
+        .section-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600; }
+        .section-theme { font-size: 0.95rem; color: var(--text-secondary); margin-top: 4px; }
+        .verses-list { display: flex; flex-direction: column; gap: 16px; }
+
+        .verse-item {
+            padding: 20px; background: var(--bg-hover); border-radius: 12px;
+            border-left: 4px solid var(--border); transition: all 0.3s ease; cursor: pointer;
+        }
+        .verse-item:hover { background: #1f1f2d; }
+        .verse-item.highlighted { border-left-color: var(--gold); background: rgba(212, 175, 55, 0.1); }
+
+        .verse-number {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; background: var(--border); border-radius: 50%;
+            font-size: 0.85rem; font-weight: 600; margin-bottom: 12px;
+        }
+
+        .verse-text { font-size: 1.4rem; line-height: 2.2; color: var(--text-primary); }
+
+        .verse-text .keyword {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.3) 0%, rgba(212, 175, 55, 0.1) 100%);
+            padding: 2px 6px; border-radius: 4px; border-bottom: 2px solid var(--gold);
+            cursor: pointer; transition: all 0.2s ease;
+        }
+        .verse-text .keyword:hover { background: rgba(212, 175, 55, 0.4); }
+
+        .comparison-view { display: grid; grid-template-columns: 1fr 80px 1fr; gap: 20px; align-items: start; }
+
+        @media (max-width: 1000px) {
+            .comparison-view { grid-template-columns: 1fr; gap: 30px; }
+            .comparison-connector { display: none; }
+        }
+
+        .comparison-panel {
+            background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); overflow: hidden;
+        }
+
+        .comparison-header {
+            padding: 20px 25px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 15px;
+        }
+
+        .comparison-body { padding: 20px; max-height: 70vh; overflow-y: auto; }
+
+        .comparison-connector {
+            display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 0;
+        }
+
+        .connector-line {
+            width: 2px; height: 100px;
+            background: linear-gradient(180deg, var(--color-a) 0%, var(--color-a-prime) 100%);
+        }
+
+        .connector-icon {
+            width: 50px; height: 50px; border-radius: 50%; background: var(--bg-card);
+            border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; margin: 10px 0;
+        }
+
+        .echo-card {
+            background: var(--bg-hover); border-radius: 12px; padding: 20px; margin-bottom: 16px;
+            border: 1px solid var(--border); transition: all 0.3s ease;
+        }
+        .echo-card:hover { border-color: var(--gold); transform: translateX(4px); }
+        .echo-type { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold); margin-bottom: 8px; }
+        .echo-phrase { font-size: 1.3rem; margin-bottom: 10px; }
+        .echo-verses { display: flex; gap: 10px; flex-wrap: wrap; }
+        .echo-verse-tag { padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; }
+
+        .response-view { display: flex; flex-direction: column; gap: 40px; }
+        .response-pair { background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); overflow: hidden; }
+
+        .response-header {
+            padding: 25px; background: linear-gradient(135deg, var(--bg-hover) 0%, var(--bg-card) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .response-theme { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold); margin-bottom: 8px; }
+        .response-analysis { color: var(--text-secondary); line-height: 1.6; }
+        .response-content { display: grid; grid-template-columns: 1fr 60px 1fr; gap: 0; }
+
+        @media (max-width: 800px) {
+            .response-content { grid-template-columns: 1fr; }
+            .response-arrow { transform: rotate(90deg); margin: 20px auto; }
+        }
+
+        .response-side { padding: 25px; }
+        .response-side.problem { background: rgba(217, 74, 74, 0.05); border-right: 1px solid var(--border); }
+        .response-side.solution { background: rgba(155, 89, 182, 0.05); }
+
+        .response-label {
+            font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em;
+            margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+        }
+        .response-label.problem { color: var(--color-b); }
+        .response-label.solution { color: var(--color-b-prime); }
+
+        .response-arrow { display: flex; align-items: center; justify-content: center; background: var(--bg-dark); }
+        .response-arrow svg { width: 40px; height: 40px; fill: var(--gold); }
+
+        .word-explorer { background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border); padding: 30px; }
+        .word-explorer-header { margin-bottom: 25px; }
+        .word-explorer-title { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 600; margin-bottom: 8px; }
+
+        .word-categories { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 25px; }
+
+        .category-btn {
+            padding: 8px 16px; background: var(--bg-hover); border: 1px solid var(--border);
+            border-radius: 20px; color: var(--text-secondary); cursor: pointer; font-size: 0.85rem; transition: all 0.3s ease;
+        }
+        .category-btn:hover, .category-btn.active { background: var(--gold); color: var(--bg-dark); border-color: var(--gold); }
+
+        .word-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; }
+
+        .word-card {
+            background: var(--bg-hover); border-radius: 12px; padding: 16px;
+            cursor: pointer; transition: all 0.3s ease; border: 1px solid transparent;
+        }
+        .word-card:hover { border-color: var(--gold); transform: translateY(-2px); }
+        .word-arabic { font-size: 1.4rem; margin-bottom: 6px; }
+        .word-transliteration { font-size: 0.9rem; color: var(--gold); margin-bottom: 4px; }
+        .word-meaning { font-size: 0.85rem; color: var(--text-muted); }
+        .word-distribution { display: flex; gap: 4px; margin-top: 12px; }
+        .word-dist-bar { height: 6px; border-radius: 3px; flex: 1; opacity: 0.3; }
+        .word-dist-bar.has-word { opacity: 1; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.8); display: flex; align-items: center; justify-content: center;
+            z-index: 1000; opacity: 0; visibility: hidden; transition: all 0.3s ease;
+        }
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .modal-content {
+            background: var(--bg-card); border-radius: 20px; border: 1px solid var(--border);
+            max-width: 900px; width: 90%; max-height: 85vh; overflow-y: auto;
+            transform: scale(0.9); transition: transform 0.3s ease;
+        }
+        .modal-overlay.active .modal-content { transform: scale(1); }
+
+        .modal-header {
+            padding: 25px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .modal-close {
+            width: 40px; height: 40px; border-radius: 50%; background: var(--bg-hover);
+            border: none; color: var(--text-primary); cursor: pointer; font-size: 1.2rem; transition: all 0.3s ease;
+        }
+        .modal-close:hover { background: var(--color-b); }
+
+        .modal-body { padding: 25px; }
+
+        .modal-verse-text {
+            font-size: 1.6rem; line-height: 2.2; margin-bottom: 15px;
+            padding: 20px; background: var(--bg-hover); border-radius: 12px;
+        }
+
+        .connected-verse-card {
+            background: var(--bg-hover); border-radius: 12px; padding: 20px;
+            margin-top: 15px; border-left: 4px solid var(--gold);
+        }
+
+        .connected-verse-header {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+        }
+
+        .connected-verse-badge {
+            padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-dark); }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px currentColor; }
+            50% { box-shadow: 0 0 20px currentColor; }
+        }
+
+        .bookend-highlight {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2) 0%, transparent 100%);
+            border: 2px solid var(--gold); border-radius: 12px;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="arabic-title arabic">سورة الشورى</div>
+        <h1>Ring Composition Explorer</h1>
+        <p>Interactive Analysis of Surah 42's Concentric Literary Structure</p>
+    </header>
+
+    <nav class="nav-tabs">
+        <button class="nav-tab active" data-view="ring">Ring Structure</button>
+        <button class="nav-tab" data-view="comparison">A ↔ A' Comparison</button>
+        <button class="nav-tab" data-view="comparison-b">B ↔ B' Comparison</button>
+        <button class="nav-tab" data-view="responses">Thematic Responses</button>
+        <button class="nav-tab" data-view="words">Word Explorer</button>
+    </nav>
+
+    <main class="main-container">
+        <div class="view-container active" id="ring-view">
+            <div class="ring-view">
+                <div class="ring-svg-container">
+                    <svg id="ring-svg" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <radialGradient id="bgGradient" cx="50%" cy="50%" r="50%">
+                                <stop offset="0%" style="stop-color:#1a1a25"/>
+                                <stop offset="100%" style="stop-color:#0a0a0f"/>
+                            </radialGradient>
+                        </defs>
+                        <circle cx="300" cy="300" r="290" fill="url(#bgGradient)"/>
+                        <g id="ring-arcs"></g>
+                        <circle cx="300" cy="300" r="80" fill="#1a1a25" stroke="#2ecc71" stroke-width="3"/>
+                        <text x="300" y="290" text-anchor="middle" class="ring-center-text" font-size="22">C</text>
+                        <text x="300" y="315" text-anchor="middle" class="ring-center-text" font-size="12" fill="#8888a0">Cosmic Pivot</text>
+                        <text x="300" y="335" text-anchor="middle" class="ring-center-text" font-size="11" fill="#55556a">27-35</text>
+                    </svg>
+                </div>
+                <div class="ring-legend" id="ring-legend"></div>
+                <div class="section-detail" id="section-detail" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div class="view-container" id="comparison-view">
+            <h2 style="text-align: center; font-family: 'Cormorant Garamond', serif; font-size: 2rem; margin-bottom: 30px;">
+                <span style="color: var(--color-a);">A</span> 
+                <span style="color: var(--text-muted);">↔</span> 
+                <span style="color: var(--color-a-prime);">A'</span> 
+                <span style="color: var(--text-secondary); font-size: 1.2rem; margin-left: 15px;">Revelation Bookends</span>
+            </h2>
+            <div class="comparison-view" id="comparison-a-aprime"></div>
+        </div>
+
+        <div class="view-container" id="comparison-b-view">
+            <h2 style="text-align: center; font-family: 'Cormorant Garamond', serif; font-size: 2rem; margin-bottom: 30px;">
+                <span style="color: var(--color-b);">B</span> 
+                <span style="color: var(--text-muted);">↔</span> 
+                <span style="color: var(--color-b-prime);">B'</span> 
+                <span style="color: var(--text-secondary); font-size: 1.2rem; margin-left: 15px;">Problem → Solution</span>
+            </h2>
+            <div class="comparison-view" id="comparison-b-bprime"></div>
+        </div>
+
+        <div class="view-container" id="responses-view">
+            <h2 style="text-align: center; font-family: 'Cormorant Garamond', serif; font-size: 2rem; margin-bottom: 30px;">
+                How Sections <span style="color: var(--gold);">"Respond"</span> to Each Other
+            </h2>
+            <div class="response-view" id="response-pairs"></div>
+        </div>
+
+        <div class="view-container" id="words-view">
+            <div class="word-explorer">
+                <div class="word-explorer-header">
+                    <h2 class="word-explorer-title">Key Theological Terms</h2>
+                    <p style="color: var(--text-secondary);">Explore how key words distribute across the ring structure</p>
+                </div>
+                <div class="word-categories" id="word-categories">
+                    <button class="category-btn active" data-category="all">All</button>
+                    <button class="category-btn" data-category="revelation">Revelation</button>
+                    <button class="category-btn" data-category="dominion">Divine Dominion</button>
+                    <button class="category-btn" data-category="transgression">Transgression</button>
+                    <button class="category-btn" data-category="community">Community</button>
+                    <button class="category-btn" data-category="forgiveness">Forgiveness</button>
+                    <button class="category-btn" data-category="cosmos">Cosmos</button>
+                    <button class="category-btn" data-category="judgment">Judgment</button>
+                </div>
+                <div class="word-grid" id="word-grid"></div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Verse Details</h3>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+    // ==================== COMPLETE DATA ====================
+    const VERSES = {
+        1: { arabic: "بسم الله الرحمن الرحيم حم", translation: "In the name of Allah, the Most Gracious, the Most Merciful. Ḥā Mīm." },
+        2: { arabic: "عسق", translation: "ʿAyn Sīn Qāf." },
+        3: { arabic: "كذلك يوحي إليك وإلى الذين من قبلك الله العزيز الحكيم", translation: "Thus does Allah, the Almighty, the All-Wise, reveal to you and to those before you." },
+        4: { arabic: "له ما في السماوات وما في الأرض وهو العلي العظيم", translation: "To Him belongs whatever is in the heavens and whatever is on the earth, and He is the Most High, the Most Great." },
+        5: { arabic: "تكاد السماوات يتفطرن من فوقهن والملائكة يسبحون بحمد ربهم ويستغفرون لمن في الأرض ألا إن الله هو الغفور الرحيم", translation: "The heavens nearly break apart from above them, and the angels glorify the praises of their Lord and seek forgiveness for those on earth. Indeed, Allah is the Forgiving, the Merciful." },
+        6: { arabic: "والذين اتخذوا من دونه أولياء الله حفيظ عليهم وما أنت عليهم بوكيل", translation: "And those who take protectors besides Him—Allah is Guardian over them, and you are not a manager over them." },
+        7: { arabic: "وكذلك أوحينا إليك قرآنا عربيا لتنذر أم القرى ومن حولها وتنذر يوم الجمع لا ريب فيه فريق في الجنة وفريق في السعير", translation: "And thus We have revealed to you an Arabic Quran that you may warn the Mother of Cities and those around it, and warn of the Day of Assembly about which there is no doubt—a party in Paradise and a party in the Blaze." },
+        8: { arabic: "ولو شاء الله لجعلهم أمة واحدة ولكن يدخل من يشاء في رحمته والظالمون ما لهم من ولي ولا نصير", translation: "And if Allah had willed, He could have made them one community, but He admits whom He wills into His mercy. And the wrongdoers have no protector or helper." },
+        9: { arabic: "أم اتخذوا من دونه أولياء فالله هو الولي وهو يحيي الموتى وهو على كل شيء قدير", translation: "Or have they taken protectors besides Him? But Allah—He is the Protector, and He gives life to the dead, and He is over all things competent." },
+        10: { arabic: "وما اختلفتم فيه من شيء فحكمه إلى الله ذلكم الله ربي عليه توكلت وإليه أنيب", translation: "And in whatever you differ, its ruling is with Allah. That is Allah, my Lord; upon Him I have relied, and to Him I turn." },
+        11: { arabic: "فاطر السماوات والأرض جعل لكم من أنفسكم أزواجا ومن الأنعام أزواجا يذرؤكم فيه ليس كمثله شيء وهو السميع البصير", translation: "Creator of the heavens and the earth. He made for you from yourselves mates, and among the cattle mates; He multiplies you thereby. There is nothing like unto Him, and He is the Hearing, the Seeing." },
+        12: { arabic: "له مقاليد السماوات والأرض يبسط الرزق لمن يشاء ويقدر إنه بكل شيء عليم", translation: "To Him belong the keys of the heavens and the earth. He extends provision for whom He wills and restricts. Indeed He is, of all things, Knowing." },
+        13: { arabic: "شرع لكم من الدين ما وصى به نوحا والذي أوحينا إليك وما وصينا به إبراهيم وموسى وعيسى أن أقيموا الدين ولا تتفرقوا فيه كبر على المشركين ما تدعوهم إليه الله يجتبي إليه من يشاء ويهدي إليه من ينيب", translation: "He has ordained for you of religion what He enjoined upon Noah and that which We have revealed to you and what We enjoined upon Abraham and Moses and Jesus—to establish the religion and not be divided therein. Difficult for the polytheists is that to which you invite them. Allah chooses for Himself whom He wills and guides to Himself whoever turns back." },
+        14: { arabic: "وما تفرقوا إلا من بعد ما جاءهم العلم بغيا بينهم ولولا كلمة سبقت من ربك إلى أجل مسمى لقضي بينهم وإن الذين أورثوا الكتاب من بعدهم لفي شك منه مريب", translation: "And they did not divide except after knowledge had come to them—out of jealous animosity (baghy) among themselves. And if not for a word that preceded from your Lord until a specified term, it would have been concluded between them. And indeed, those who were granted the Scripture after them are in disquieting doubt concerning it." },
+        15: { arabic: "فلذلك فادع واستقم كما أمرت ولا تتبع أهواءهم وقل آمنت بما أنزل الله من كتاب وأمرت لأعدل بينكم الله ربنا وربكم لنا أعمالنا ولكم أعمالكم لا حجة بيننا وبينكم الله يجمع بيننا وإليه المصير", translation: "So to that then invite, and stand firm as you are commanded, and do not follow their desires. And say, 'I believe in what Allah has revealed of Scripture, and I have been commanded to do justice among you. Allah is our Lord and your Lord. For us are our deeds, and for you your deeds. There is no argument between us and you. Allah will bring us together, and to Him is the destination.'" },
+        16: { arabic: "والذين يحاجون في الله من بعد ما استجيب له حجتهم داحضة عند ربهم وعليهم غضب ولهم عذاب شديد", translation: "And those who argue concerning Allah after He has been responded to—their argument is invalid with their Lord, and upon them is wrath, and for them is a severe punishment." },
+        17: { arabic: "الله الذي أنزل الكتاب بالحق والميزان وما يدريك لعل الساعة قريب", translation: "Allah is the one who has sent down the Book in truth and the balance. And what will make you perceive? Perhaps the Hour is near." },
+        18: { arabic: "يستعجل بها الذين لا يؤمنون بها والذين آمنوا مشفقون منها ويعلمون أنها الحق ألا إن الذين يمارون في الساعة لفي ضلال بعيد", translation: "Those who do not believe in it are impatient for it, but those who believe are fearful of it and know that it is the truth. Unquestionably, those who dispute concerning the Hour are in extreme error." },
+        19: { arabic: "الله لطيف بعباده يرزق من يشاء وهو القوي العزيز", translation: "Allah is Subtle with His servants; He gives provision to whom He wills. And He is the Powerful, the Exalted in Might." },
+        20: { arabic: "من كان يريد حرث الآخرة نزد له في حرثه ومن كان يريد حرث الدنيا نؤته منها وما له في الآخرة من نصيب", translation: "Whoever desires the harvest of the Hereafter—We increase for him in his harvest. And whoever desires the harvest of this world—We give him thereof, but there is not for him in the Hereafter any share." },
+        21: { arabic: "أم لهم شركاء شرعوا لهم من الدين ما لم يأذن به الله ولولا كلمة الفصل لقضي بينهم وإن الظالمين لهم عذاب أليم", translation: "Or have they partners who have ordained for them a religion which Allah has not permitted? But if not for the decisive word, it would have been concluded between them. And indeed, the wrongdoers will have a painful punishment." },
+        22: { arabic: "ترى الظالمين مشفقين مما كسبوا وهو واقع بهم والذين آمنوا وعملوا الصالحات في روضات الجنات لهم ما يشاءون عند ربهم ذلك هو الفضل الكبير", translation: "You will see the wrongdoers fearful of what they have earned, and it will befall them. And those who believe and do righteous deeds will be in the flowering gardens of Paradise. They will have whatever they wish with their Lord. That is the great bounty." },
+        23: { arabic: "ذلك الذي يبشر الله عباده الذين آمنوا وعملوا الصالحات قل لا أسألكم عليه أجرا إلا المودة في القربى ومن يقترف حسنة نزد له فيها حسنا إن الله غفور شكور", translation: "That is the good news which Allah gives to His servants who believe and do righteous deeds. Say, 'I do not ask you for it any payment—only affection among relatives.' And whoever commits a good deed—We will increase for him good therein. Indeed, Allah is Forgiving and Appreciative." },
+        24: { arabic: "أم يقولون افترى على الله كذبا فإن يشإ الله يختم على قلبك ويمح الله الباطل ويحق الحق بكلماته إنه عليم بذات الصدور", translation: "Or do they say, 'He has invented about Allah a lie'? But if Allah willed, He could seal over your heart. And Allah eliminates falsehood and establishes the truth by His words. Indeed, He is Knowing of that within the breasts." },
+        25: { arabic: "وهو الذي يقبل التوبة عن عباده ويعفو عن السيئات ويعلم ما تفعلون", translation: "And it is He who accepts repentance from His servants and pardons misdeeds, and He knows what you do." },
+        26: { arabic: "ويستجيب الذين آمنوا وعملوا الصالحات ويزيدهم من فضله والكافرون لهم عذاب شديد", translation: "And He responds to those who believe and do righteous deeds and increases them from His bounty. But the disbelievers will have a severe punishment." },
+        27: { arabic: "ولو بسط الله الرزق لعباده لبغوا في الأرض ولكن ينزل بقدر ما يشاء إنه بعباده خبير بصير", translation: "And if Allah had extended provision for His servants, they would have committed tyranny (baghy) throughout the earth. But He sends down in an amount which He wills. Indeed He is, of His servants, Aware and Seeing." },
+        28: { arabic: "وهو الذي ينزل الغيث من بعد ما قنطوا وينشر رحمته وهو الولي الحميد", translation: "And it is He who sends down the rain after they had despaired and spreads His mercy. And He is the Protector, the Praiseworthy." },
+        29: { arabic: "ومن آياته خلق السماوات والأرض وما بث فيهما من دابة وهو على جمعهم إذا يشاء قدير", translation: "And of His signs is the creation of the heavens and earth and what He has dispersed throughout them of creatures. And He is, for gathering them when He wills, competent." },
+        30: { arabic: "وما أصابكم من مصيبة فبما كسبت أيديكم ويعفو عن كثير", translation: "And whatever strikes you of disaster—it is for what your hands have earned; but He pardons much." },
+        31: { arabic: "وما أنتم بمعجزين في الأرض وما لكم من دون الله من ولي ولا نصير", translation: "And you cannot escape on the earth. And you have not besides Allah any protector or helper." },
+        32: { arabic: "ومن آياته الجوار في البحر كالأعلام", translation: "And of His signs are the ships in the sea like mountains." },
+        33: { arabic: "إن يشأ يسكن الريح فيظللن رواكد على ظهره إن في ذلك لآيات لكل صبار شكور", translation: "If He willed, He could still the wind, and they would remain motionless on its surface. Indeed in that are signs for everyone patient and grateful." },
+        34: { arabic: "أو يوبقهن بما كسبوا ويعف عن كثير", translation: "Or He could destroy them for what they earned; but He pardons much." },
+        35: { arabic: "ويعلم الذين يجادلون في آياتنا ما لهم من محيص", translation: "And those who dispute concerning Our signs would know that there is no escape for them." },
+        36: { arabic: "فما أوتيتم من شيء فمتاع الحياة الدنيا وما عند الله خير وأبقى للذين آمنوا وعلى ربهم يتوكلون", translation: "So whatever thing you have been given—it is but enjoyment of worldly life. But what is with Allah is better and more lasting for those who believe and upon their Lord rely." },
+        37: { arabic: "والذين يجتنبون كبائر الإثم والفواحش وإذا ما غضبوا هم يغفرون", translation: "And those who avoid the major sins and immoralities, and when they are angry, they forgive." },
+        38: { arabic: "والذين استجابوا لربهم وأقاموا الصلاة وأمرهم شورى بينهم ومما رزقناهم ينفقون", translation: "And those who have responded to their Lord and established prayer and whose affair is consultation (shūrā) among themselves, and from what We have provided them, they spend." },
+        39: { arabic: "والذين إذا أصابهم البغي هم ينتصرون", translation: "And those who, when tyranny (baghy) strikes them, they defend themselves." },
+        40: { arabic: "وجزاء سيئة سيئة مثلها فمن عفا وأصلح فأجره على الله إنه لا يحب الظالمين", translation: "And the retribution for an evil act is an evil one like it. But whoever pardons and reconciles—his reward is from Allah. Indeed, He does not like wrongdoers." },
+        41: { arabic: "ولمن انتصر بعد ظلمه فأولئك ما عليهم من سبيل", translation: "And whoever avenges himself after having been wronged—those have no blame upon them." },
+        42: { arabic: "إنما السبيل على الذين يظلمون الناس ويبغون في الأرض بغير الحق أولئك لهم عذاب أليم", translation: "The blame is only upon those who wrong people and tyrannize (yabghūn) upon the earth without right. Those will have a painful punishment." },
+        43: { arabic: "ولمن صبر وغفر إن ذلك لمن عزم الأمور", translation: "And whoever is patient and forgives—indeed, that is of the matters requiring resolve." },
+        44: { arabic: "ومن يضلل الله فما له من ولي من بعده وترى الظالمين لما رأوا العذاب يقولون هل إلى مرد من سبيل", translation: "And whoever Allah sends astray—for him there is no protector beyond Him. And you will see the wrongdoers, when they see the punishment, saying, 'Is there for return any way?'" },
+        45: { arabic: "وتراهم يعرضون عليها خاشعين من الذل ينظرون من طرف خفي وقال الذين آمنوا إن الخاسرين الذين خسروا أنفسهم وأهليهم يوم القيامة ألا إن الظالمين في عذاب مقيم", translation: "And you will see them being exposed to it, humbled from humiliation, looking from a stealthy glance. And those who believed will say, 'Indeed, the losers are those who lost themselves and their families on the Day of Resurrection. Unquestionably, the wrongdoers are in an enduring punishment.'" },
+        46: { arabic: "وما كان لهم من أولياء ينصرونهم من دون الله ومن يضلل الله فما له من سبيل", translation: "And there were not for them any allies to aid them other than Allah. And whoever Allah sends astray—for him there is no way." },
+        47: { arabic: "استجيبوا لربكم من قبل أن يأتي يوم لا مرد له من الله ما لكم من ملجإ يومئذ وما لكم من نكير", translation: "Respond to your Lord before a Day comes from Allah of which there is no repelling. You have no refuge on that Day, nor do you have any denial." },
+        48: { arabic: "فإن أعرضوا فما أرسلناك عليهم حفيظا إن عليك إلا البلاغ وإنا إذا أذقنا الإنسان منا رحمة فرح بها وإن تصبهم سيئة بما قدمت أيديهم فإن الإنسان كفور", translation: "But if they turn away—then We have not sent you as a guardian (ḥafīẓ) over them. Upon you is only notification. And indeed, when We let man taste mercy from Us, he rejoices in it; but when evil afflicts them for what their hands have put forth, then indeed, man is ungrateful." },
+        49: { arabic: "لله ملك السماوات والأرض يخلق ما يشاء يهب لمن يشاء إناثا ويهب لمن يشاء الذكور", translation: "To Allah belongs the dominion of the heavens and the earth; He creates what He wills. He gives to whom He wills females, and He gives to whom He wills males." },
+        50: { arabic: "أو يزوجهم ذكرانا وإناثا ويجعل من يشاء عقيما إنه عليم قدير", translation: "Or He makes them both males and females, and He renders whom He wills barren. Indeed, He is Knowing and Powerful." },
+        51: { arabic: "وما كان لبشر أن يكلمه الله إلا وحيا أو من وراء حجاب أو يرسل رسولا فيوحي بإذنه ما يشاء إنه علي حكيم", translation: "And it is not for any human being that Allah should speak to him except by revelation (waḥy) or from behind a veil or that He sends a messenger to reveal by His permission what He wills. Indeed, He is Most High and Wise." },
+        52: { arabic: "وكذلك أوحينا إليك روحا من أمرنا ما كنت تدري ما الكتاب ولا الإيمان ولكن جعلناه نورا نهدي به من نشاء من عبادنا وإنك لتهدي إلى صراط مستقيم", translation: "And thus We have revealed to you a Spirit from Our command. You did not know what is the Book or faith, but We have made it a light by which We guide whom We will of Our servants. And indeed, you guide to a straight path." },
+        53: { arabic: "صراط الله الذي له ما في السماوات وما في الأرض ألا إلى الله تصير الأمور", translation: "The path of Allah, to whom belongs whatever is in the heavens and whatever is on the earth. Unquestionably, to Allah all affairs return." }
+    };
+
+    const RING_SECTIONS = {
+        'A': { verses: [1,2,3,4,5,6,7,8,9,10,11,12], color: '#4a90d9', name: 'A - Revelation & Dominion', theme: 'Divine revelation establishes cosmic sovereignty' },
+        'B': { verses: [13,14,15,16,17,18,19,20,21,22,23,24,25,26], color: '#d94a4a', name: 'B - The Problem', theme: 'Division (tafarruq) caused by transgression (baghy)' },
+        'C': { verses: [27,28,29,30,31,32,33,34,35], color: '#2ecc71', name: 'C - Cosmic Pivot', theme: 'Divine signs in nature demonstrate Allah\'s governance' },
+        'B_prime': { verses: [36,37,38,39,40,41,42,43,44,45,46], color: '#9b59b6', name: "B' - The Solution", theme: 'Consultation (shūrā) and patience as remedies' },
+        'A_prime': { verses: [47,48,49,50,51,52,53], color: '#f5a623', name: "A' - Revelation Returns", theme: 'Modes of revelation, return to Allah' }
+    };
+
+    // Key echoes with full details
+    const KEY_ECHOES = {
+        'A_Aprime': [
+            { from: 4, to: 53, phrase: 'له ما في السماوات وما في الأرض', phraseTranslation: 'To Him belongs what is in the heavens and earth', type: 'Exact Bookend' },
+            { from: 7, to: 52, phrase: 'وكذلك أوحينا إليك', phraseTranslation: 'And thus We revealed to you', type: 'Revelation Formula' },
+            { from: 3, to: 51, phrase: 'يوحي ↔ وحيا', phraseTranslation: 'revelation (verbal forms)', type: 'Root Echo (w-ḥ-y)' },
+            { from: 6, to: 48, phrase: 'حفيظ ↔ حفيظا', phraseTranslation: 'Guardian', type: 'Exact Word' },
+            { from: 3, to: 51, phrase: 'الحكيم ↔ حكيم', phraseTranslation: 'The Wise', type: 'Divine Attribute' },
+            { from: 9, to: 50, phrase: 'قدير', phraseTranslation: 'All-Powerful', type: 'Divine Attribute' },
+            { from: 12, to: 50, phrase: 'عليم', phraseTranslation: 'All-Knowing', type: 'Divine Attribute' },
+            { from: 10, to: 53, phrase: 'إليه... الأمور', phraseTranslation: 'to Him... affairs (return)', type: 'Thematic Closure' },
+            { from: 8, to: 46, phrase: 'ولي ولا نصير ↔ أولياء ينصرونهم', phraseTranslation: 'protector or helper ↔ allies to aid them', type: 'Root Echo (w-l-y, n-ṣ-r)' },
+            { from: 11, to: 49, phrase: 'فاطر السماوات والأرض ↔ ملك السماوات والأرض', phraseTranslation: 'Creator of heavens and earth ↔ Dominion of heavens and earth', type: 'Cosmic Formula' },
+        ],
+        'B_Bprime': [
+            { from: 14, to: 39, phrase: 'بغيا ↔ البغي', phraseTranslation: 'out of transgression ↔ the transgression', type: 'Problem→Solution' },
+            { from: 14, to: 42, phrase: 'بغيا ↔ يبغون', phraseTranslation: 'transgress (noun) ↔ transgress (verb)', type: 'Root Echo (b-gh-y)' },
+            { from: 13, to: 38, phrase: 'تتفرقوا ↔ شورى', phraseTranslation: 'do not divide ↔ consultation', type: 'Thematic Response' },
+            { from: 21, to: 42, phrase: 'عذاب أليم', phraseTranslation: 'painful punishment', type: 'Exact Phrase' },
+            { from: 22, to: 44, phrase: 'الظالمين', phraseTranslation: 'the wrongdoers', type: 'Exact Word' },
+            { from: 21, to: 46, phrase: 'شركاء... من دون الله ↔ أولياء... من دون الله', phraseTranslation: 'partners besides Allah ↔ allies besides Allah', type: 'Structural Parallel' },
+            { from: 16, to: 45, phrase: 'عذاب شديد ↔ عذاب مقيم', phraseTranslation: 'severe punishment ↔ enduring punishment', type: 'Judgment Echo' },
+            { from: 18, to: 36, phrase: 'آمنوا', phraseTranslation: 'those who believe', type: 'Root Echo (ʾ-m-n)' },
+            { from: 23, to: 37, phrase: 'غفور ↔ يغفرون', phraseTranslation: 'Forgiving ↔ they forgive', type: 'Root Echo (gh-f-r)' },
+            { from: 26, to: 38, phrase: 'استجيب/يستجيب ↔ استجابوا', phraseTranslation: 'responds ↔ responded', type: 'Root Echo (j-w-b)' },
+            { from: 19, to: 38, phrase: 'يرزق ↔ رزقناهم', phraseTranslation: 'He provides ↔ We provided them', type: 'Root Echo (r-z-q)' },
+            { from: 25, to: 40, phrase: 'يعفو ↔ عفا', phraseTranslation: 'He pardons ↔ whoever pardons', type: 'Root Echo (ʿ-f-w)' },
+        ]
+    };
+
+    // Extended thematic response pairs
+    const RESPONSE_PAIRS = [
+        {
+            theme: 'Division (tafarruq) → Consultation (shūrā)',
+            analysis: 'Section B commands unity and diagnoses division caused by baghy. Section B\' prescribes shūrā (mutual consultation) as the communal antidote, replacing ego-driven rivalry with collaborative decision-making.',
+            problem: { verses: [13, 14], key: 'ولا تتفرقوا فيه... وما تفرقوا إلا من بعد ما جاءهم العلم بغيا بينهم', translation: '"Do not be divided in religion... They only divided after knowledge came to them—out of jealous animosity among themselves"' },
+            solution: { verses: [38], key: 'وأمرهم شورى بينهم', translation: '"Their affairs are conducted by mutual consultation among them"' }
+        },
+        {
+            theme: 'Transgression (baghy) → Dignified Response',
+            analysis: 'B names baghy as the disease causing religious fragmentation. B\' instructs believers on the ethical response when facing baghy: defend dignity but prioritize patience and forgiveness.',
+            problem: { verses: [14], key: 'بغيا بينهم', translation: '"Out of jealous animosity (baghy) among themselves"' },
+            solution: { verses: [39, 40, 43], key: 'والذين إذا أصابهم البغي هم ينتصرون... فمن عفا وأصلح فأجره على الله... ولمن صبر وغفر إن ذلك لمن عزم الأمور', translation: '"Those who defend themselves when tyranny strikes them... But whoever pardons and reconciles—his reward is from Allah... Whoever is patient and forgives—that is of the matters requiring resolve"' }
+        },
+        {
+            theme: 'False Legislators (shuraka\') → True Wrongdoers Identified',
+            analysis: 'B condemns those who legislate religion without Allah\'s permission (illegitimate partners/shuraka\'). B\' mirrors this by identifying who the true wrongdoers are—those who oppress people and spread corruption.',
+            problem: { verses: [21], key: 'أم لهم شركاء شرعوا لهم من الدين ما لم يأذن به الله', translation: '"Or do they have partners who have ordained for them a religion which Allah has not permitted?"' },
+            solution: { verses: [42], key: 'إنما السبيل على الذين يظلمون الناس ويبغون في الأرض بغير الحق', translation: '"The blame is only upon those who wrong people and transgress upon the earth without right"' }
+        },
+        {
+            theme: 'Useless Allies Besides Allah',
+            analysis: 'Both sections expose the futility of seeking protectors besides Allah. B warns that wrongdoers have no protector; B\' confirms those allies could not help on Judgment Day.',
+            problem: { verses: [21], key: 'شركاء شرعوا لهم... ولولا كلمة الفصل لقضي بينهم', translation: '"Partners who legislated for them... Were it not for the decisive word, judgment would have been concluded between them"' },
+            solution: { verses: [46], key: 'وما كان لهم من أولياء ينصرونهم من دون الله', translation: '"And there were not for them any allies to aid them other than Allah"' }
+        },
+        {
+            theme: 'Punishment Warning Echoes',
+            analysis: 'Both B and B\' contain vivid warnings of punishment for wrongdoers, creating a bracket around the cosmic center (C). The vocabulary escalates from "severe" to "painful" to "enduring."',
+            problem: { verses: [16, 21, 26], key: 'لهم عذاب شديد... الظالمين لهم عذاب أليم... الكافرون لهم عذاب شديد', translation: '"For them is severe punishment... The wrongdoers will have painful punishment... The disbelievers will have severe punishment"' },
+            solution: { verses: [42, 44, 45], key: 'أولئك لهم عذاب أليم... لما رأوا العذاب... في عذاب مقيم', translation: '"Those will have a painful punishment... When they saw the punishment... In an enduring punishment"' }
+        },
+        {
+            theme: 'Divine Forgiveness → Human Forgiveness',
+            analysis: 'B emphasizes Allah\'s forgiveness (ghafūr, ya\'fū); B\' transforms this into an ethical imperative for believers—to themselves forgive (yaghfirūn, \'afā, ghafara).',
+            problem: { verses: [23, 25], key: 'إن الله غفور شكور... يعفو عن السيئات', translation: '"Indeed Allah is Forgiving, Appreciative... He pardons misdeeds"' },
+            solution: { verses: [37, 40, 43], key: 'هم يغفرون... فمن عفا وأصلح... ولمن صبر وغفر', translation: '"They forgive... Whoever pardons and reconciles... Whoever is patient and forgives"' }
+        },
+        {
+            theme: 'Believers\' Fate: Paradise Gardens',
+            analysis: 'Both sections promise the same reward for believers—gardens of paradise with whatever they wish. The parallel reinforces the ring\'s symmetry.',
+            problem: { verses: [22], key: 'والذين آمنوا وعملوا الصالحات في روضات الجنات لهم ما يشاءون عند ربهم', translation: '"Those who believe and do righteous deeds will be in flowering gardens of Paradise—they will have whatever they wish with their Lord"' },
+            solution: { verses: [36], key: 'وما عند الله خير وأبقى للذين آمنوا', translation: '"What is with Allah is better and more lasting for those who believe"' }
+        },
+        {
+            theme: 'Response to Allah → Response from Allah',
+            analysis: 'B mentions Allah responding to believers; B\' emphasizes believers responding to their Lord. The root j-w-b creates a dialogic relationship.',
+            problem: { verses: [26], key: 'ويستجيب الذين آمنوا', translation: '"And He responds to those who believe"' },
+            solution: { verses: [38, 47], key: 'والذين استجابوا لربهم... استجيبوا لربكم', translation: '"Those who responded to their Lord... Respond to your Lord"' }
+        },
+        {
+            theme: 'The Wrongdoers\' Path (sabīl)',
+            analysis: 'Both sections use "sabīl" (way/path) in the context of wrongdoers. B\' repeatedly denies wrongdoers any way of escape.',
+            problem: { verses: [16, 18], key: 'حجتهم داحضة... لفي ضلال بعيد', translation: '"Their argument is invalid... In extreme error"' },
+            solution: { verses: [41, 44, 46], key: 'ما عليهم من سبيل... هل إلى مرد من سبيل... فما له من سبيل', translation: '"No blame upon them... Is there any way of return?... For him there is no way"' }
+        },
+        {
+            theme: 'Worldly Life (al-dunyā) Warning',
+            analysis: 'Both sections warn against prioritizing worldly life over the Hereafter, using nearly identical framing.',
+            problem: { verses: [20], key: 'ومن كان يريد حرث الدنيا نؤته منها وما له في الآخرة من نصيب', translation: '"Whoever desires the harvest of this world—We give him thereof, but for him in the Hereafter there is no share"' },
+            solution: { verses: [36], key: 'فما أوتيتم من شيء فمتاع الحياة الدنيا', translation: '"Whatever you have been given is but enjoyment of worldly life"' }
+        }
+    ];
+
+    // Comprehensive word list
+    const KEY_WORDS = [
+        { arabic: 'وحي', english: 'waḥy', meaning: 'revelation', category: 'revelation', distribution: {A: 4, B: 2, C: 0, B_prime: 0, A_prime: 7} },
+        { arabic: 'أوحينا', english: 'awḥaynā', meaning: 'We revealed', category: 'revelation', distribution: {A: 2, B: 1, C: 0, B_prime: 0, A_prime: 1} },
+        { arabic: 'شورى', english: 'shūrā', meaning: 'consultation', category: 'community', distribution: {A: 0, B: 0, C: 0, B_prime: 1, A_prime: 0} },
+        { arabic: 'بغي', english: 'baghy', meaning: 'transgression/tyranny', category: 'transgression', distribution: {A: 0, B: 1, C: 1, B_prime: 2, A_prime: 0} },
+        { arabic: 'تفرق', english: 'tafarruq', meaning: 'division/disunity', category: 'transgression', distribution: {A: 0, B: 2, C: 0, B_prime: 0, A_prime: 0} },
+        { arabic: 'شرع', english: 'sharʿ', meaning: 'to legislate', category: 'revelation', distribution: {A: 0, B: 2, C: 0, B_prime: 0, A_prime: 0} },
+        { arabic: 'حفيظ', english: 'ḥafīẓ', meaning: 'guardian/protector', category: 'dominion', distribution: {A: 1, B: 0, C: 0, B_prime: 0, A_prime: 1} },
+        { arabic: 'السماوات', english: 'samāwāt', meaning: 'the heavens', category: 'cosmos', distribution: {A: 5, B: 0, C: 2, B_prime: 0, A_prime: 2} },
+        { arabic: 'الأرض', english: 'arḍ', meaning: 'the earth', category: 'cosmos', distribution: {A: 4, B: 0, C: 3, B_prime: 1, A_prime: 2} },
+        { arabic: 'ظالمين', english: 'ẓālimīn', meaning: 'wrongdoers', category: 'transgression', distribution: {A: 1, B: 3, C: 0, B_prime: 5, A_prime: 0} },
+        { arabic: 'آمنوا', english: 'āmanū', meaning: 'those who believed', category: 'community', distribution: {A: 0, B: 6, C: 0, B_prime: 3, A_prime: 0} },
+        { arabic: 'عذاب', english: 'ʿadhāb', meaning: 'punishment', category: 'judgment', distribution: {A: 0, B: 4, C: 0, B_prime: 4, A_prime: 0} },
+        { arabic: 'غفر', english: 'ghafara', meaning: 'to forgive', category: 'forgiveness', distribution: {A: 2, B: 2, C: 0, B_prime: 3, A_prime: 0} },
+        { arabic: 'رحمة', english: 'raḥma', meaning: 'mercy', category: 'forgiveness', distribution: {A: 2, B: 0, C: 1, B_prime: 0, A_prime: 1} },
+        { arabic: 'صبر', english: 'ṣabr', meaning: 'patience', category: 'community', distribution: {A: 0, B: 0, C: 1, B_prime: 2, A_prime: 0} },
+        { arabic: 'قدير', english: 'qadīr', meaning: 'all-powerful', category: 'dominion', distribution: {A: 1, B: 0, C: 1, B_prime: 0, A_prime: 1} },
+        { arabic: 'عليم', english: 'ʿalīm', meaning: 'all-knowing', category: 'dominion', distribution: {A: 1, B: 1, C: 0, B_prime: 0, A_prime: 2} },
+        { arabic: 'حكيم', english: 'ḥakīm', meaning: 'wise', category: 'dominion', distribution: {A: 1, B: 0, C: 0, B_prime: 0, A_prime: 1} },
+        { arabic: 'صراط', english: 'ṣirāṭ', meaning: 'path', category: 'revelation', distribution: {A: 0, B: 0, C: 0, B_prime: 0, A_prime: 2} },
+        { arabic: 'الأمور', english: 'umūr', meaning: 'affairs', category: 'dominion', distribution: {A: 0, B: 0, C: 0, B_prime: 1, A_prime: 1} },
+        { arabic: 'ولي', english: 'walī', meaning: 'protector/ally', category: 'dominion', distribution: {A: 4, B: 0, C: 2, B_prime: 2, A_prime: 0} },
+        { arabic: 'أولياء', english: 'awliyāʾ', meaning: 'allies/protectors', category: 'dominion', distribution: {A: 2, B: 0, C: 0, B_prime: 1, A_prime: 0} },
+        { arabic: 'نصير', english: 'naṣīr', meaning: 'helper', category: 'community', distribution: {A: 1, B: 0, C: 1, B_prime: 0, A_prime: 0} },
+        { arabic: 'ينصرون', english: 'yanṣurūn', meaning: 'they defend', category: 'community', distribution: {A: 0, B: 0, C: 0, B_prime: 2, A_prime: 0} },
+        { arabic: 'عفا/يعفو', english: 'ʿafā/yaʿfū', meaning: 'to pardon', category: 'forgiveness', distribution: {A: 0, B: 1, C: 2, B_prime: 1, A_prime: 0} },
+        { arabic: 'الكتاب', english: 'kitāb', meaning: 'the Book/Scripture', category: 'revelation', distribution: {A: 0, B: 3, C: 0, B_prime: 0, A_prime: 1} },
+        { arabic: 'الدين', english: 'dīn', meaning: 'religion', category: 'revelation', distribution: {A: 0, B: 3, C: 0, B_prime: 0, A_prime: 0} },
+        { arabic: 'رب', english: 'rabb', meaning: 'Lord', category: 'dominion', distribution: {A: 3, B: 4, C: 0, B_prime: 3, A_prime: 1} },
+        { arabic: 'يشاء', english: 'yashāʾ', meaning: 'He wills', category: 'dominion', distribution: {A: 4, B: 3, C: 3, B_prime: 0, A_prime: 6} },
+        { arabic: 'رزق', english: 'rizq', meaning: 'provision', category: 'dominion', distribution: {A: 1, B: 1, C: 1, B_prime: 1, A_prime: 0} },
+        { arabic: 'آيات', english: 'āyāt', meaning: 'signs', category: 'cosmos', distribution: {A: 0, B: 0, C: 3, B_prime: 0, A_prime: 0} },
+        { arabic: 'سبيل', english: 'sabīl', meaning: 'way/path', category: 'judgment', distribution: {A: 0, B: 0, C: 0, B_prime: 4, A_prime: 0} },
+        { arabic: 'الصالحات', english: 'ṣāliḥāt', meaning: 'good deeds', category: 'community', distribution: {A: 0, B: 4, C: 0, B_prime: 0, A_prime: 0} },
+        { arabic: 'شكور', english: 'shakūr', meaning: 'grateful/appreciative', category: 'community', distribution: {A: 0, B: 1, C: 1, B_prime: 0, A_prime: 0} },
+        { arabic: 'توكل', english: 'tawakkul', meaning: 'reliance/trust', category: 'community', distribution: {A: 1, B: 0, C: 0, B_prime: 1, A_prime: 0} },
+        { arabic: 'الدنيا', english: 'dunyā', meaning: 'worldly life', category: 'judgment', distribution: {A: 0, B: 1, C: 0, B_prime: 1, A_prime: 0} },
+        { arabic: 'الآخرة', english: 'ākhira', meaning: 'Hereafter', category: 'judgment', distribution: {A: 0, B: 2, C: 0, B_prime: 0, A_prime: 0} },
+        { arabic: 'استجاب', english: 'istajāba', meaning: 'to respond', category: 'community', distribution: {A: 0, B: 2, C: 0, B_prime: 2, A_prime: 0} },
+        { arabic: 'الحق', english: 'ḥaqq', meaning: 'truth/right', category: 'revelation', distribution: {A: 0, B: 3, C: 0, B_prime: 1, A_prime: 0} },
+        { arabic: 'العزيز', english: 'ʿazīz', meaning: 'the Almighty', category: 'dominion', distribution: {A: 1, B: 1, C: 0, B_prime: 0, A_prime: 0} },
+        { arabic: 'فاطر', english: 'fāṭir', meaning: 'Creator/Originator', category: 'dominion', distribution: {A: 1, B: 0, C: 0, B_prime: 0, A_prime: 0} },
+        { arabic: 'ملك', english: 'mulk', meaning: 'dominion/sovereignty', category: 'dominion', distribution: {A: 0, B: 0, C: 0, B_prime: 0, A_prime: 1} },
+        { arabic: 'هدى', english: 'hudā', meaning: 'guidance', category: 'revelation', distribution: {A: 0, B: 1, C: 0, B_prime: 0, A_prime: 1} },
+        { arabic: 'نور', english: 'nūr', meaning: 'light', category: 'revelation', distribution: {A: 0, B: 0, C: 0, B_prime: 0, A_prime: 1} },
+        { arabic: 'شركاء', english: 'shurakāʾ', meaning: 'partners', category: 'transgression', distribution: {A: 0, B: 1, C: 0, B_prime: 0, A_prime: 0} },
+        { arabic: 'يضلل', english: 'yuḍlil', meaning: 'to send astray', category: 'judgment', distribution: {A: 0, B: 0, C: 0, B_prime: 2, A_prime: 0} },
+        { arabic: 'القيامة', english: 'qiyāma', meaning: 'Resurrection', category: 'judgment', distribution: {A: 0, B: 0, C: 0, B_prime: 1, A_prime: 0} },
+        { arabic: 'الساعة', english: 'sāʿa', meaning: 'the Hour', category: 'judgment', distribution: {A: 0, B: 2, C: 0, B_prime: 0, A_prime: 0} },
+    ];
+
+    // ==================== FUNCTIONS ====================
+    
+    function getVerseData(num) {
+        return VERSES[num] || { arabic: '', translation: '' };
+    }
+
+    function getSectionForVerse(verseNum) {
+        for (const [section, data] of Object.entries(RING_SECTIONS)) {
+            if (data.verses.includes(verseNum)) return section;
+        }
+        return null;
+    }
+
+    function createRingArcs() {
+        const svg = document.getElementById('ring-arcs');
+        const center = 300;
+        
+        const arcConfigs = {
+            'A': { inner: 220, outer: 280, startAngle: -135, endAngle: -45 },
+            'A_prime': { inner: 220, outer: 280, startAngle: 45, endAngle: 135 },
+            'B': { inner: 140, outer: 200, startAngle: -150, endAngle: -30 },
+            'B_prime': { inner: 140, outer: 200, startAngle: 30, endAngle: 150 },
+        };
+
+        Object.entries(arcConfigs).forEach(([section, config]) => {
+            const path = describeArc(center, center, config.inner, config.outer, config.startAngle, config.endAngle);
+            const arc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            arc.setAttribute('d', path);
+            arc.setAttribute('fill', RING_SECTIONS[section].color);
+            arc.setAttribute('class', 'ring-arc');
+            arc.setAttribute('data-section', section);
+            arc.setAttribute('opacity', '0.85');
+            arc.onclick = () => selectSection(section);
+            svg.appendChild(arc);
+            
+            const labelAngle = (config.startAngle + config.endAngle) / 2;
+            const labelRadius = (config.inner + config.outer) / 2;
+            const labelX = center + labelRadius * Math.cos(labelAngle * Math.PI / 180);
+            const labelY = center + labelRadius * Math.sin(labelAngle * Math.PI / 180);
+            
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', labelX);
+            label.setAttribute('y', labelY);
+            label.setAttribute('text-anchor', 'middle');
+            label.setAttribute('dominant-baseline', 'middle');
+            label.setAttribute('class', 'ring-label');
+            label.textContent = section.replace('_prime', "'");
+            svg.appendChild(label);
+        });
+    }
+
+    function describeArc(cx, cy, innerRadius, outerRadius, startAngle, endAngle) {
+        const start1 = polarToCartesian(cx, cy, outerRadius, endAngle);
+        const end1 = polarToCartesian(cx, cy, outerRadius, startAngle);
+        const start2 = polarToCartesian(cx, cy, innerRadius, startAngle);
+        const end2 = polarToCartesian(cx, cy, innerRadius, endAngle);
+        const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1;
+        return ['M', start1.x, start1.y, 'A', outerRadius, outerRadius, 0, largeArcFlag, 0, end1.x, end1.y, 'L', start2.x, start2.y, 'A', innerRadius, innerRadius, 0, largeArcFlag, 1, end2.x, end2.y, 'Z'].join(' ');
+    }
+
+    function polarToCartesian(cx, cy, r, angle) {
+        const rad = angle * Math.PI / 180;
+        return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+    }
+
+    function selectSection(section) {
+        document.querySelectorAll('.ring-arc').forEach(arc => {
+            arc.classList.remove('selected');
+            if (arc.dataset.section === section) arc.classList.add('selected');
+        });
+        showSectionDetail(section);
+    }
+
+    function showSectionDetail(section) {
+        const detail = document.getElementById('section-detail');
+        const sectionData = RING_SECTIONS[section];
+        
+        let versesHtml = sectionData.verses.map(v => {
+            const verse = getVerseData(v);
+            const isBookend = (section === 'A' && [4, 6].includes(v)) || (section === 'A_prime' && [48, 53].includes(v));
+            return `
+                <div class="verse-item ${isBookend ? 'bookend-highlight' : ''}" onclick="showVerseModal(${v}, '${section}')">
+                    <span class="verse-number" style="background: ${sectionData.color}40; color: ${sectionData.color}">${v}</span>
+                    <p class="verse-text arabic">${verse.arabic}</p>
+                    <p class="translation">${verse.translation}</p>
+                </div>
+            `;
+        }).join('');
+
+        detail.innerHTML = `
+            <div class="section-header">
+                <div class="section-badge" style="background: ${sectionData.color}">${section.replace('_prime', "'")}</div>
+                <div>
+                    <h3 class="section-title">${sectionData.name}</h3>
+                    <p class="section-theme">${sectionData.theme}</p>
+                </div>
+            </div>
+            <div class="verses-list">${versesHtml}</div>
+        `;
+        detail.style.display = 'block';
+    }
+
+    function createLegend() {
+        const legend = document.getElementById('ring-legend');
+        Object.entries(RING_SECTIONS).forEach(([key, data]) => {
+            const item = document.createElement('div');
+            item.className = 'legend-item';
+            item.onclick = () => selectSection(key);
+            item.innerHTML = `
+                <div class="legend-color" style="background: ${data.color}"></div>
+                <div>
+                    <div class="legend-label">${key.replace('_prime', "'")}</div>
+                    <div class="legend-verses">Verses ${data.verses[0]}-${data.verses[data.verses.length-1]}</div>
+                </div>
+            `;
+            legend.appendChild(item);
+        });
+    }
+
+    function createComparisonView(containerId, sec1, sec2, echoes) {
+        const container = document.getElementById(containerId);
+        const data1 = RING_SECTIONS[sec1];
+        const data2 = RING_SECTIONS[sec2];
+        
+        container.innerHTML = `
+            <div class="comparison-panel">
+                <div class="comparison-header" style="border-left: 4px solid ${data1.color}">
+                    <div class="section-badge" style="background: ${data1.color}">${sec1.replace('_prime', "'")}</div>
+                    <div>
+                        <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.2rem;">${data1.name}</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Verses ${data1.verses[0]}-${data1.verses[data1.verses.length-1]}</p>
+                    </div>
+                </div>
+                <div class="comparison-body">
+                    ${data1.verses.map(v => createVerseCardWithTranslation(v, sec1, echoes)).join('')}
+                </div>
+            </div>
+            
+            <div class="comparison-connector">
+                <div class="connector-line"></div>
+                <div class="connector-icon">⟷</div>
+                <div class="connector-line"></div>
+            </div>
+            
+            <div class="comparison-panel">
+                <div class="comparison-header" style="border-left: 4px solid ${data2.color}">
+                    <div class="section-badge" style="background: ${data2.color}">${sec2.replace('_prime', "'")}</div>
+                    <div>
+                        <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.2rem;">${data2.name}</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-muted);">Verses ${data2.verses[0]}-${data2.verses[data2.verses.length-1]}</p>
+                    </div>
+                </div>
+                <div class="comparison-body">
+                    ${data2.verses.map(v => createVerseCardWithTranslation(v, sec2, echoes)).join('')}
+                </div>
+            </div>
+        `;
+
+        const echoesHtml = `
+            <div style="grid-column: 1 / -1; margin-top: 30px;">
+                <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; margin-bottom: 20px; text-align: center;">
+                    Lexical Echoes & Connections
+                </h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+                    ${echoes.map(e => `
+                        <div class="echo-card">
+                            <div class="echo-type">${e.type}</div>
+                            <div class="echo-phrase arabic" style="font-size: 1.4rem;">${e.phrase}</div>
+                            <p class="translation" style="margin: 8px 0;">${e.phraseTranslation}</p>
+                            <div class="echo-verses">
+                                <span class="echo-verse-tag" style="background: ${data1.color}30; color: ${data1.color}">v.${e.from}</span>
+                                <span style="color: var(--text-muted);">↔</span>
+                                <span class="echo-verse-tag" style="background: ${data2.color}30; color: ${data2.color}">v.${e.to}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', echoesHtml);
+    }
+
+    function createVerseCardWithTranslation(verseNum, section, echoes) {
+        const verse = getVerseData(verseNum);
+        const sectionData = RING_SECTIONS[section];
+        const hasEcho = echoes.some(e => e.from === verseNum || e.to === verseNum);
+        
+        return `
+            <div class="verse-item ${hasEcho ? 'highlighted' : ''}" onclick="showVerseModal(${verseNum}, '${section}')" style="border-left-color: ${hasEcho ? 'var(--gold)' : sectionData.color}">
+                <span class="verse-number" style="background: ${sectionData.color}40; color: ${sectionData.color}">${verseNum}</span>
+                <p class="verse-text arabic" style="font-size: 1.2rem;">${verse.arabic}</p>
+                <p class="translation">${verse.translation}</p>
+            </div>
+        `;
+    }
+
+    function createResponsePairsView() {
+        const container = document.getElementById('response-pairs');
+        
+        container.innerHTML = RESPONSE_PAIRS.map(pair => `
+            <div class="response-pair">
+                <div class="response-header">
+                    <h3 class="response-theme">${pair.theme}</h3>
+                    <p class="response-analysis">${pair.analysis}</p>
+                </div>
+                <div class="response-content">
+                    <div class="response-side problem">
+                        <div class="response-label problem">
+                            <span style="background: var(--color-b); width: 12px; height: 12px; border-radius: 50%; display: inline-block;"></span>
+                            B — The Problem (v.${pair.problem.verses.join(', ')})
+                        </div>
+                        <p class="arabic" style="font-size: 1.3rem; line-height: 2; margin-bottom: 10px;">${pair.problem.key}</p>
+                        <p class="translation">${pair.problem.translation}</p>
+                    </div>
+                    <div class="response-arrow">
+                        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </div>
+                    <div class="response-side solution">
+                        <div class="response-label solution">
+                            <span style="background: var(--color-b-prime); width: 12px; height: 12px; border-radius: 50%; display: inline-block;"></span>
+                            B' — The Solution (v.${pair.solution.verses.join(', ')})
+                        </div>
+                        <p class="arabic" style="font-size: 1.3rem; line-height: 2; margin-bottom: 10px;">${pair.solution.key}</p>
+                        <p class="translation">${pair.solution.translation}</p>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function createWordExplorer(category = 'all') {
+        const grid = document.getElementById('word-grid');
+        const filtered = category === 'all' ? KEY_WORDS : KEY_WORDS.filter(w => w.category === category);
+        
+        grid.innerHTML = filtered.map(word => {
+            const sections = ['A', 'B', 'C', 'B_prime', 'A_prime'];
+            const colors = [RING_SECTIONS.A.color, RING_SECTIONS.B.color, RING_SECTIONS.C.color, RING_SECTIONS.B_prime.color, RING_SECTIONS.A_prime.color];
+            
+            return `
+                <div class="word-card" onclick="showWordDetail('${word.arabic}')">
+                    <div class="word-arabic arabic">${word.arabic}</div>
+                    <div class="word-transliteration">${word.english}</div>
+                    <div class="word-meaning">${word.meaning}</div>
+                    <div class="word-distribution">
+                        ${sections.map((s, i) => `
+                            <div class="word-dist-bar ${word.distribution[s] > 0 ? 'has-word' : ''}" 
+                                 style="background: ${colors[i]}"
+                                 title="${s.replace('_prime', "'")}: ${word.distribution[s]}"></div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function setupWordCategories() {
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                createWordExplorer(btn.dataset.category);
+            };
+        });
+    }
+
+    function showVerseModal(verseNum, section) {
+        const modal = document.getElementById('modal-overlay');
+        const title = document.getElementById('modal-title');
+        const body = document.getElementById('modal-body');
+        const verse = getVerseData(verseNum);
+        const sectionData = RING_SECTIONS[section];
+        
+        title.innerHTML = `Verse ${verseNum} <span style="color: ${sectionData.color}; font-size: 0.9rem;">(${section.replace('_prime', "'")})</span>`;
+        
+        // Find connections
+        const connections = [];
+        Object.entries(KEY_ECHOES).forEach(([pair, echoes]) => {
+            echoes.forEach(e => {
+                if (e.from === verseNum) {
+                    connections.push({ to: e.to, phrase: e.phrase, phraseTranslation: e.phraseTranslation, type: e.type });
+                } else if (e.to === verseNum) {
+                    connections.push({ to: e.from, phrase: e.phrase, phraseTranslation: e.phraseTranslation, type: e.type });
+                }
+            });
+        });
+        
+        let connectionsHtml = '';
+        if (connections.length > 0) {
+            connectionsHtml = `
+                <h4 style="margin: 25px 0 15px; color: var(--gold);">Connections to Other Verses</h4>
+                ${connections.map(c => {
+                    const connectedVerse = getVerseData(c.to);
+                    const connectedSection = getSectionForVerse(c.to);
+                    const connectedColor = RING_SECTIONS[connectedSection]?.color || '#888';
+                    return `
+                        <div class="connected-verse-card">
+                            <div class="connected-verse-header">
+                                <span class="connected-verse-badge" style="background: ${connectedColor}30; color: ${connectedColor}">Verse ${c.to} (${connectedSection?.replace('_prime', "'")})</span>
+                                <span style="font-size: 0.8rem; color: var(--gold);">${c.type}</span>
+                            </div>
+                            <div style="padding: 10px; background: var(--bg-dark); border-radius: 8px; margin-bottom: 12px;">
+                                <p class="arabic" style="font-size: 1.1rem; color: var(--gold);">${c.phrase}</p>
+                                <p class="translation" style="font-size: 0.85rem;">${c.phraseTranslation}</p>
+                            </div>
+                            <p class="arabic" style="font-size: 1.2rem; margin-bottom: 8px;">${connectedVerse.arabic}</p>
+                            <p class="translation">${connectedVerse.translation}</p>
+                        </div>
+                    `;
+                }).join('')}
+            `;
+        }
+        
+        body.innerHTML = `
+            <div class="modal-verse-text">
+                <p class="arabic" style="font-size: 1.6rem; margin-bottom: 12px;">${verse.arabic}</p>
+                <p class="translation" style="font-size: 1rem;">${verse.translation}</p>
+            </div>
+            ${connectionsHtml}
+        `;
+        
+        modal.classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('modal-overlay').classList.remove('active');
+    }
+
+    function showWordDetail(word) {
+        const wordData = KEY_WORDS.find(w => w.arabic === word);
+        if (!wordData) return;
+        
+        const modal = document.getElementById('modal-overlay');
+        const title = document.getElementById('modal-title');
+        const body = document.getElementById('modal-body');
+        
+        title.innerHTML = `<span class="arabic">${word}</span> <span style="color: var(--gold);">(${wordData.english})</span>`;
+        
+        const sections = ['A', 'B', 'C', 'B_prime', 'A_prime'];
+        const total = sections.reduce((sum, s) => sum + wordData.distribution[s], 0);
+        
+        body.innerHTML = `
+            <div style="margin-bottom: 20px;">
+                <p style="font-size: 1.1rem; color: var(--text-secondary);">${wordData.meaning}</p>
+                <p style="font-size: 0.9rem; color: var(--text-muted); margin-top: 5px;">Category: ${wordData.category} | Total occurrences: ${total}</p>
+            </div>
+            <h4 style="margin-bottom: 15px;">Distribution Across Ring Structure</h4>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                ${sections.map(s => {
+                    const count = wordData.distribution[s];
+                    const color = RING_SECTIONS[s].color;
+                    const maxCount = Math.max(...Object.values(wordData.distribution));
+                    const pct = maxCount > 0 ? (count / maxCount) * 100 : 0;
+                    return `
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="width: 40px; height: 30px; background: ${color}; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85rem;">${s.replace('_prime', "'")}</div>
+                            <div style="flex: 1; height: 24px; background: var(--bg-hover); border-radius: 4px; overflow: hidden;">
+                                <div style="height: 100%; width: ${pct}%; background: ${color}; transition: width 0.5s ease;"></div>
+                            </div>
+                            <div style="width: 30px; text-align: right; font-weight: 600;">${count}</div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+        
+        modal.classList.add('active');
+    }
+
+    function setupNavigation() {
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.onclick = () => {
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.view + '-view').classList.add('active');
+            };
+        });
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        createRingArcs();
+        createLegend();
+        createComparisonView('comparison-a-aprime', 'A', 'A_prime', KEY_ECHOES.A_Aprime);
+        createComparisonView('comparison-b-bprime', 'B', 'B_prime', KEY_ECHOES.B_Bprime);
+        createResponsePairsView();
+        createWordExplorer();
+        setupWordCategories();
+        setupNavigation();
+        
+        document.getElementById('modal-overlay').onclick = (e) => {
+            if (e.target.id === 'modal-overlay') closeModal();
+        };
+        document.onkeydown = (e) => { if (e.key === 'Escape') closeModal(); };
+    });
+    </script>
+</body>
+</html>
